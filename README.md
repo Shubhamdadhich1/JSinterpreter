@@ -3,7 +3,6 @@
 > **Thunder Hackathon 2.0** — A fully working JavaScript runtime written in pure Python 3.
 > No Node.js. No external libraries. Zero dependencies. Just Python.
 
-🌐 **Live Demo:** https://YOUR_USERNAME.github.io/JSinterpreter
 
 ---
 
