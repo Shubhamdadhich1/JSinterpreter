@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JSRunner — JS Interpreter in Pure Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --paper:    #f0f4ff;
+  --grid:     #c8d4f0;
+  --ink:      #0f1a3d;
+  --ink2:     #2a3a6b;
+  --muted:    #6b7db3;
+  --orange:   #ff5c00;
+  --orange2:  #e04f00;
+  --white:    #ffffff;
+  --panel-bg: #0f1a3d;
+  --panel-fg: #7ee8a2;
+  --border:   #dce4f5;
+  --tag-bg:   rgba(15,26,61,0.07);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(240,244,255,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 58px;
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-pill {
+  background: var(--orange);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-links a:hover { color: var(--ink); }
+
+.gh-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--ink);
+  color: #fff !important;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  transition: background 0.15s !important;
+}
+.gh-link:hover { background: var(--ink2) !important; color: #fff !important; }
+
+/* ── HERO ── */
+.hero {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 5rem 2rem 3rem;
+  text-align: center;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 14px 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink2);
+  margin-bottom: 1.8rem;
+  letter-spacing: 0.2px;
+}
+.hero-tag-dot {
+  width: 7px; height: 7px;
+  background: var(--orange);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.7); }
+}
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -2px;
+  color: var(--ink);
+  margin-bottom: 1.2rem;
+}
+h1 em {
+  font-style: normal;
+  color: var(--orange);
+  position: relative;
+}
+h1 em::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0; right: 0;
+  height: 3px;
+  background: var(--orange);
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 520px;
+  margin: 0 auto 2rem;
+}
+
+.badge-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink2);
+}
+.badge.orange { border-color: rgba(255,92,0,0.3); background: rgba(255,92,0,0.06); color: var(--orange); }
+.badge.navy   { border-color: rgba(15,26,61,0.2);  background: rgba(15,26,61,0.06);  color: var(--ink); }
+
+/* ── PLAYGROUND ── */
+.pg-wrap {
+  max-width: 1180px;
+  margin: 0 auto 5rem;
+  padding: 0 2rem;
+}
+
+.pg-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.playground {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.6) inset,
+    0 20px 60px rgba(15,26,61,0.12),
+    0 4px 12px rgba(15,26,61,0.06);
+  background: var(--white);
+}
+
+/* toolbar */
+.toolbar {
+  background: var(--white);
+  border-bottom: 1.5px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tl-row { display: flex; gap: 5px; margin-right: 2px; }
+.tl { width: 11px; height: 11px; border-radius: 50%; }
+.tl-r { background: #ff5f57; }
+.tl-y { background: #febc2e; }
+.tl-g { background: #28c840; }
+
+.divider-v {
+  width: 1px; height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.ex-label {
+  font-size: 0.73rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ex-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.ex-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.71rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ex-btn:hover { border-color: var(--ink2); color: var(--ink); background: var(--tag-bg); }
+.ex-btn.active { border-color: var(--orange); color: var(--orange); background: rgba(255,92,0,0.06); }
+
+.run-btn {
+  margin-left: auto;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 20px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(255,92,0,0.25);
+}
+.run-btn:hover  { background: var(--orange2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,92,0,0.35); }
+.run-btn:active { transform: translateY(0); }
+.run-btn.busy   { opacity: 0.75; pointer-events: none; }
+
+/* split panes */
+.panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 480px;
+}
+
+.pane-head {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+/* LEFT pane — graph paper editor */
+.pane-editor {
+  border-right: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.pane-editor .pane-head {
+  background: var(--paper);
+  color: var(--muted);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.pane-head-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-js     { background: #f7b731; }
+.dot-out    { background: #26de81; }
+
+#editor {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 18px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: var(--ink);
+  background: var(--white);
+  caret-color: var(--orange);
+  tab-size: 2;
+}
+#editor::selection { background: rgba(255,92,0,0.15); }
+#editor::placeholder { color: var(--muted); }
+
+/* RIGHT pane — dark terminal */
+.pane-output {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+}
+.pane-output .pane-head {
+  background: rgba(255,255,255,0.04);
+  border-bottom-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.35);
+}
+
+#out-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+#out-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.18);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1.6;
+}
+#out-placeholder svg { opacity: 0.2; }
+
+#out {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--panel-fg);
+  display: none;
+}
+#out.err { color: #ff7b8a; }
+
+.out-prompt {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.2);
+  margin-bottom: 8px;
+  display: none;
+}
+
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+.cursor::after {
+  content: '▌';
+  animation: blink 1s step-start infinite;
+  color: var(--panel-fg);
+}
+
+/* shortcut hint */
+.shortcut-hint {
+  padding: 6px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.18);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: right;
+}
+
+/* ── HOW IT WORKS ── */
+.section {
+  max-width: 1000px;
+  margin: 0 auto 5rem;
+  padding: 0 2rem;
+}
+.section-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--orange);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.section h2 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: -1px;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+.section .lead {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+/* pipeline */
+.pipeline {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 3.5rem;
+  overflow-x: auto;
+}
+
+.pipe-node {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1.4rem 1rem;
+  text-align: center;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 130px;
+}
+.pipe-node:hover {
+  border-color: var(--orange);
+  box-shadow: 0 4px 20px rgba(255,92,0,0.1);
+}
+.pipe-num {
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--orange);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.pipe-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.pipe-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 0.3rem;
+}
+.pipe-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+.pipe-arrow {
+  color: var(--border);
+  font-size: 1.2rem;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* feature cards */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+.feat-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1.3rem;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.feat-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(15,26,61,0.08);
+}
+.feat-icon { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.feat-card h3 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--ink); }
+.feat-card p  { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+/* demo note */
+.demo-note {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.demo-note a { color: var(--orange); text-decoration: none; }
+.demo-note a:hover { text-decoration: underline; }
+.demo-note code {
+  font-family: 'DM Mono', monospace;
+  background: var(--tag-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--ink2);
+  font-size: 0.72rem;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1.5px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: var(--white);
+}
+footer a { color: var(--orange); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 680px) {
+  nav { padding: 0 1.2rem; }
+  .nav-links a:not(.gh-link) { display: none; }
+  .hero { padding: 3rem 1.2rem 2rem; }
+  .panes { grid-template-columns: 1fr; }
+  .pane-editor { border-right: none; border-bottom: 1.5px solid var(--border); }
+  #editor { min-height: 220px; }
+  #out-wrap { min-height: 180px; }
+  .pipeline { grid-template-columns: 1fr; gap: 0.6rem; }
+  .pipe-arrow { transform: rotate(90deg); justify-self: center; }
+  .pg-wrap, .section { padding: 0 1.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    JSRunner
+    <span class="logo-pill">PY</span>
+  </div>
+  <div class="nav-links">
+    <a href="#playground">Playground</a>
+    <a href="#architecture">How it works</a>
+    <a href="https://github.com/YOUR_USERNAME/JSinterpreter" target="_blank" class="gh-link">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <div class="hero-tag-dot"></div>
+    ⚡ Thunder Hackathon 2.0 · Built from scratch
+  </div>
+  <h1>Run <em>JavaScript</em><br/>with Pure Python</h1>
+  <p class="hero-sub">No Node.js. No libraries. A complete JS runtime — Lexer → Parser → Evaluator — written entirely in Python, line by line.</p>
+  <div class="badge-row">
+    <span class="badge orange">Zero dependencies</span>
+    <span class="badge navy">Pure Python 3</span>
+    <span class="badge">2,700+ lines</span>
+    <span class="badge">5 / 5 test cases ✓</span>
+  </div>
+</section>
+
+<!-- PLAYGROUND -->
+<div class="pg-wrap" id="playground">
+  <div class="pg-label">// Try it live</div>
+  <div class="playground">
+    <!-- toolbar -->
+    <div class="toolbar">
+      <div class="tl-row">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-g"></div>
+      </div>
+      <div class="divider-v"></div>
+      <span class="ex-label">Examples</span>
+      <div class="ex-btns">
+        <button class="ex-btn active" onclick="loadEx('oddeven',this)">Odd/Even</button>
+        <button class="ex-btn" onclick="loadEx('triangle',this)">Triangle</button>
+        <button class="ex-btn" onclick="loadEx('armstrong',this)">Armstrong</button>
+        <button class="ex-btn" onclick="loadEx('reverse',this)">Array Reverse</button>
+        <button class="ex-btn" onclick="loadEx('palindrome',this)">Palindrome</button>
+        <button class="ex-btn" onclick="loadEx('closure',this)">Closure</button>
+        <button class="ex-btn" onclick="loadEx('class',this)">Class</button>
+      </div>
+      <button class="run-btn" id="runBtn" onclick="runCode()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l10 6-10 6V2z"/></svg>
+        Run
+      </button>
+    </div>
+
+    <!-- panes -->
+    <div class="panes">
+      <!-- editor -->
+      <div class="pane-editor">
+        <div class="pane-head">
+          <div class="pane-head-dot dot-js"></div>
+          <span style="color:var(--muted)">script.js</span>
+        </div>
+        <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off"
+          placeholder="// Write your JavaScript here..."
+          onkeydown="handleKey(event)"></textarea>
+      </div>
+
+      <!-- output -->
+      <div class="pane-output">
+        <div class="pane-head">
+          <div class="pane-head-dot dot-out"></div>
+          <span>output</span>
+        </div>
+        <div id="out-wrap">
+          <div id="out-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            Press Run or Ctrl+Enter<br/>to execute your code
+          </div>
+          <div class="out-prompt" id="out-prompt">$ node script.js</div>
+          <pre id="out"></pre>
+        </div>
+        <div class="shortcut-hint">Ctrl + Enter to run</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-note">
+    This playground simulates interpreter output via AI &nbsp;·&nbsp;
+    Clone the repo and run locally: <code>python jsrunner.py tests/tc1_odd_even.txt</code> &nbsp;·&nbsp;
+    <a href="https://github.com/YOUR_USERNAME/JSinterpreter" target="_blank">View on GitHub →</a>
+  </div>
+</div>
+
+<!-- ARCHITECTURE -->
+<section class="section" id="architecture">
+  <div class="section-eyebrow">Architecture</div>
+  <h2>Three-stage pipeline</h2>
+  <p class="lead">Classic interpreter design, built from scratch in a single Python file with no external dependencies.</p>
+
+  <div class="pipeline">
+    <div class="pipe-node">
+      <div class="pipe-num">1</div>
+      <div class="pipe-icon">🔬</div>
+      <div class="pipe-name">Lexer</div>
+      <div class="pipe-desc">Single-pass scanner. Characters → token stream. Handles strings, template literals, hex, octal, binary.</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">2</div>
+      <div class="pipe-icon">🌳</div>
+      <div class="pipe-name">Parser</div>
+      <div class="pipe-desc">Recursive descent with full operator precedence. Produces lightweight AST nodes as Python dicts.</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">3</div>
+      <div class="pipe-icon">⚡</div>
+      <div class="pipe-name">Evaluator</div>
+      <div class="pipe-desc">Tree-walking interpreter with lexical scoping, closures, prototype chain, and JS-spec type coercion.</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">4</div>
+      <div class="pipe-icon">🖥️</div>
+      <div class="pipe-name">Output</div>
+      <div class="pipe-desc">console.log/error/warn routed to stdout. Errors include type and description.</div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">What's supported</div>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">📦</div><h3>Variables & Scope</h3><p>let, const, var with hoisting. Lexical scoping via environment chain. Block scope enforced.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔁</div><h3>Control Flow</h3><p>if/else, switch/case, for, while, do…while, for…of, for…in, break, continue, labels.</p></div>
+    <div class="feat-card"><div class="feat-icon">🎯</div><h3>Functions</h3><p>Declarations, expressions, arrow functions, closures, rest params, spread args, defaults.</p></div>
+    <div class="feat-card"><div class="feat-icon">🏛️</div><h3>Classes</h3><p>class keyword, constructor, methods, new, this binding, extends, prototype chain.</p></div>
+    <div class="feat-card"><div class="feat-icon">🧩</div><h3>Destructuring</h3><p>Array and object destructuring, rest patterns, spread in calls and array/object literals.</p></div>
+    <div class="feat-card"><div class="feat-icon">🛡️</div><h3>Error Handling</h3><p>try/catch/finally, throw, TypeError, RangeError, SyntaxError, ReferenceError.</p></div>
+    <div class="feat-card"><div class="feat-icon">📚</div><h3>Built-ins</h3><p>Full Array & String methods, Math, Date, JSON, parseInt, parseFloat, typeof, instanceof.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔢</div><h3>Number Literals</h3><p>Hex 0xFF, octal 0o17, binary 0b1010, scientific notation, NaN, Infinity, −0.</p></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  Built for ⚡ Thunder Hackathon 2.0 &nbsp;·&nbsp;
+  <a href="https://github.com/YOUR_USERNAME/JSinterpreter" target="_blank">View on GitHub</a> &nbsp;·&nbsp;
+  Pure Python 3 · Zero dependencies
+</footer>
+
+<script>
+const EXAMPLES = {
+  oddeven:   `let num = 7;\nif (num % 2 === 0) {\n  console.log(num + " is Even");\n} else {\n  console.log(num + " is Odd");\n}`,
+  triangle:  `for (let i = 1; i <= 5; i++) {\n  let row = "";\n  for (let j = 0; j < i; j++) {\n    row += "*";\n  }\n  console.log(row);\n}`,
+  armstrong: `function isArmstrong(n) {\n  let digits = String(n).split("");\n  let len = digits.length;\n  let sum = 0;\n  for (let d of digits) {\n    sum += Math.pow(parseInt(d), len);\n  }\n  return sum === n;\n}\nconsole.log(isArmstrong(153)); // true\nconsole.log(isArmstrong(123)); // false`,
+  reverse:   `let arr = [1, 2, 3, 4, 5];\nconsole.log("Original: " + arr.join(", "));\narr.reverse();\nconsole.log("Reversed: " + arr.join(", "));`,
+  palindrome:`let word = "racecar";\nlet rev = word.split("").reverse().join("");\nif (word === rev) {\n  console.log(word + " is a Palindrome");\n} else {\n  console.log(word + " is not a Palindrome");\n}`,
+  closure:   `function makeCounter(start) {\n  let count = start;\n  return function() {\n    count++;\n    return count;\n  };\n}\nlet counter = makeCounter(0);\nconsole.log(counter()); // 1\nconsole.log(counter()); // 2\nconsole.log(counter()); // 3`,
+  class:     `class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    console.log(this.name + " makes a sound.");\n  }\n}\nclass Dog extends Animal {\n  speak() {\n    console.log(this.name + " barks!");\n  }\n}\nlet d = new Dog("Rex");\nd.speak();`
+};
+
+const editor = document.getElementById('editor');
+const outEl   = document.getElementById('out');
+const outWrap = document.getElementById('out-wrap');
+const outPH   = document.getElementById('out-placeholder');
+const outPr   = document.getElementById('out-prompt');
+const runBtn  = document.getElementById('runBtn');
+
+editor.value = EXAMPLES.oddeven;
+
+function loadEx(key, btn) {
+  editor.value = EXAMPLES[key];
+  document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  reset();
+}
+
+function reset() {
+  outEl.style.display = 'none';
+  outPH.style.display = 'flex';
+  outPr.style.display = 'none';
+  outEl.textContent = '';
+  outEl.className = '';
+}
+
+function handleKey(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart;
+    editor.value = editor.value.slice(0, s) + '  ' + editor.value.slice(editor.selectionEnd);
+    editor.selectionStart = editor.selectionEnd = s + 2;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCode();
+}
+
+async function runCode() {
+  const code = editor.value.trim();
+  if (!code) return;
+
+  runBtn.classList.add('busy');
+  runBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9" stroke-dasharray="40" stroke-dashoffset="12"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.7s" repeatCount="indefinite"/></circle></svg> Running…`;
+
+  outPH.style.display = 'none';
+  outPr.style.display = 'block';
+  outEl.style.display = 'block';
+  outEl.className = 'cursor';
+  outEl.textContent = '';
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: `You are simulating JSRunner, a JavaScript interpreter written in pure Python.
+Execute the given JS code exactly as a real JS engine would.
+Output ONLY what console.log / console.error / console.warn would print — nothing else.
+No markdown, no explanation, no code blocks.
+Booleans: true/false lowercase. Arrays: default JS toString. undefined/null as-is.
+For runtime errors output only the error like: TypeError: Cannot read property 'x' of undefined`,
+        messages: [{ role: "user", content: `Execute this JS and output only the console output:\n\n${code}` }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text ?? "(no output)";
+
+    outEl.classList.remove('cursor');
+    outEl.textContent = text;
+    if (/Error:/i.test(text)) outEl.classList.add('err');
+
+  } catch (err) {
+    outEl.classList.remove('cursor');
+    outEl.classList.add('err');
+    outEl.textContent = `NetworkError: ${err.message}`;
+  }
+
+  runBtn.classList.remove('busy');
+  runBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l10 6-10 6V2z"/></svg> Run`;
+}
+</script>
+</body>
+</html>
